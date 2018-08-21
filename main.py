@@ -44,10 +44,8 @@ with open('FONT', 'rb') as f:
 # load rom
 if len(sys.argv)>=2:
 	game = sys.argv[1]
-else:
-	game = "15PUZZLE"
 
-with open('Chip-8/'+game, 'rb') as f:
+with open(game, 'rb') as f:
 	count = 512
 	byte = f.read(1)
 	while byte:
@@ -92,19 +90,23 @@ while(sw):
 
 	# core
 	if lead == int('0x0', 0):
-		last = opcode & int('0x000F', 0)
-		if last == int('0xE', 0):
+		last = opcode & int('0x00FF', 0)
+		if last == int('0xEE', 0):
 			SP = SP - 1
 			PC = STACK[SP]
 			STACK[SP] = 0
-		elif last == int('0x0', 0):
+		elif last == int('0xE0', 0):
 			for j in range(32):
 				for i in range(64):
 					screen[j][i] = 0
+		elif last == int('0x00', 0):
+			# NOP
+			pass
 		else:
 			sw = False
 			print('Not programed', hex(opcode))
 		PC = PC + 2
+
 	elif lead == int('0x1', 0):
 		location = opcode & int('0x0FFF', 0)
 		PC = location
@@ -421,7 +423,7 @@ while(sw):
 	gameDisplay.blit(textsurface,(ref + 130, count*15))
 
 	pygame.display.update()
-
+	input("Continue")
 
 pygame.quit()
 quit()
