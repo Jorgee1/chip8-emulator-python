@@ -1,0 +1,61 @@
+
+6xkk - LD Vx, byte
+8xy0 - LD Vx, Vy
+Fx07 - LD Vx, DT
+Fx0A - LD Vx, K
+Fx65 - LD Vx, [I]
+Annn - LD I, addr
+Fx55 - LD [I], Vx
+Fx15 - LD DT, Vx
+Fx18 - LD ST, Vx
+Fx29 - LD F, Vx
+Fx33 - LD B, Vx
+
+
+
+
+7xkk - ADD Vx, byte
+8xy4 - ADD Vx, Vy
+Fx1E - ADD I, Vx
+
+
+1nnn - JP addr
+Bnnn - JP V0, addr
+
+
+3xkk - SE Vx, byte
+5xy0 - SE Vx, Vy
+
+
+4xkk - SNE Vx, byte
+9xy0 - SNE Vx, Vy
+
+
+8xy5 - SUB Vx, Vy
+
+8xy2 - AND Vx, Vy
+
+8xy1 - OR Vx, Vy
+
+8xy3 - XOR Vx, Vy
+
+Dxyn - DRW Vx, Vy, nibble
+
+Cxkk - RND Vx, byte
+
+00E0 - CLS
+
+00EE - RET
+
+2nnn - CALL addr
+
+8xy6 - SHR Vx {, Vy}
+
+8xy7 - SUBN Vx, Vy
+
+8xyE - SHL Vx {, Vy}
+
+Ex9E - SKP Vx
+
+ExA1 - SKNP Vx
+
