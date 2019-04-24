@@ -44,6 +44,9 @@ with open('FONT', 'rb') as f:
 # load rom
 if len(sys.argv)>=2:
 	game = sys.argv[1]
+else:
+	print("No file selected")
+	exit()
 
 with open(game, 'rb') as f:
 	count = 512
@@ -423,7 +426,7 @@ while(sw):
 	gameDisplay.blit(textsurface,(ref + 130, count*15))
 
 	pygame.display.update()
-	input("Continue")
+	#input("Continue")
 
 pygame.quit()
 quit()

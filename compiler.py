@@ -2,7 +2,7 @@ from random import randint
 import binascii
 import sys
 import re
-
+from os import path, makedirs
 """
 NOP
 CALL x
@@ -88,211 +88,139 @@ def compiler(cmd):
 	else:
 		raise Compilation_error("No se reconoce el comando: "+ cmd)
 
+class Compiler:
+	num_match = '[0-9a-f]'
+	output_folder = 'Out'
+
+	def __init__(self):
+		self.tokens = {
+			"CLS" : self.CLS, "RET":self.RET, "JP"  :  self.JP, "NOP" : self.NOP,
+			"CALL":self.CALL, "SE" : self.SE, "SNE" : self.SNE, "LD"  :  self.LD,
+			"ADD" : self.ADD, "OR" : self.OR, "AND" : self.AND, "XOR" : self.XOR,
+			"SUB" : self.SUB, "SHR":self.SHR, "SUBN":self.SUBN, "SHL" : self.SHL,
+			"RND" : self.RND, "DRW":self.DRW, "SKP" : self.SKP, "SKNP":self.SKNP,
+		}
+
+	def compile(self, cmd):
+		word = cmd.split(' ', 1)
+		print("Token  :", word[0])
+		try:
+			out = self.tokens[word[0]](word[1])
+			print(out)
+			return out
+		except KeyError:
+			raise Compilation_error("No se reconoce el comando: "+ cmd)
+			#return self.NOPE
 
 
-def type_addr(code, cmd):
-	addr = re.search(num_match+'{3}', cmd).group(0)
-	return 'code'+addr
-
-num_match = '[0-9a-f]'
-
-def NOP(cmd):
-	return binascii.unhexlify('0000')
+	def type_addr(self, code, cmd):
+		addr = re.search(self.num_match+'{3}', cmd).group(0)
+		return code+addr
 
 
-def CLS(cmd):
-	return binascii.unhexlify('00E0')
+	def NOP(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def CLS(self, cmd):
+
+		return binascii.unhexlify('00E0')
+
+	def RET(self, cmd):
+
+		return binascii.unhexlify('00EE')
+
+	def JP(self, cmd):
+		"""
+			JP addr     -> JP 0xNNN
+			JP V0, addr -> JP VX, 0xNNN
+		"""
+		print(re.match(r'V[0-9a-fA-F], 0x[0-9a-fA-F]{3}', cmd))
+
+		return binascii.unhexlify('0000')
+
+	def CALL(self, cmd):
+
+		return binascii.unhexlify(self.type_addr('2', cmd))
+
+	def SE(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def SNE(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def LD(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def ADD(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def OR(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def AND(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def XOR(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def SUB(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def SHR(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def SUBN(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def SHL(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def RND(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def DRW(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def SKP(self, cmd):
+
+		return binascii.unhexlify('0000')
+
+	def SKNP(self, cmd):
+
+		return binascii.unhexlify('0000')
 
 
-def RET(cmd):
-	return binascii.unhexlify('00EE')
 
 
-def JP(cmd):
-	return binascii.unhexlify('0000')
+compiler = Compiler()
 
+if not path.exists(compiler.output_folder):
+	makedirs(compiler.output_folder)
 
-def CALL(cmd):
-	return binascii.unhexlify(type_addr('2', cmd))
-
-
-def SE(cmd):
-	return binascii.unhexlify('0000')
-
-
-def SNE(cmd):
-	return binascii.unhexlify('0000')
-
-
-def LD(cmd):
-	return binascii.unhexlify('0000')
-
-
-def ADD(cmd):
-	return binascii.unhexlify('0000')
-
-
-def OR(cmd):
-	return binascii.unhexlify('0000')
-
-
-def AND(cmd):
-	return binascii.unhexlify('0000')
-
-
-def XOR(cmd):
-	return binascii.unhexlify('0000')
-
-
-def SUB(cmd):
-	return binascii.unhexlify('0000')
-
-
-def SHR(cmd):
-	return binascii.unhexlify('0000')
-
-
-def SUBN(cmd):
-	return binascii.unhexlify('0000')
-
-
-def SHL(cmd):
-	return binascii.unhexlify('0000')
-
-
-def RND(cmd):
-	return binascii.unhexlify('0000')
-
-
-def DRW(cmd):
-	return binascii.unhexlify('0000')
-
-
-def SKP(cmd):
-	return binascii.unhexlify('0000')
-
-
-def SKNP(cmd):
-	return binascii.unhexlify('0000')
-
-
-
-
-def compiler2(cmd):
-	words = {
-		"CLS" : CLS, "RET":RET, "JP"  :  JP, "NOP" : NOP,
-		"CALL":CALL, "SE" : SE, "SNE" : SNE, "LD"  :  LD,
-		"ADD" : ADD, "OR" : OR, "AND" : AND, "XOR" : XOR,
-		"SUB" : SUB, "SHR":SHR, "SUBN":SUBN, "SHL" : SHL,
-		"RND" : RND, "DRW":DRW, "SKP" : SKP, "SKNP":SKNP,
-	}
-
-	word = cmd.split(' ')[0]
-	print(word)
-	try:
-		return words[word](cmd)
-	except KeyError:
-		raise Compilation_error("No se reconoce el comando: "+ cmd)
-
-
-with open('Programs/Test.Chip8', 'r') as f:
-	with open('Out/TEST', 'wb') as out:
-		for i in f:
-			line = i.strip("\n")
+with open('Programs/Test.Chip8', 'r') as f,\
+	 open(path.join(compiler.output_folder, 'TEST'), 'wb') as out:
+	for i in f:
+		line = i.strip("\n")
+		if line:
+			print("Command:", line)
 			if line[0] != '#':
-				out.write(compiler2(line))
+				out.write(compiler.compile(line))
 			else:
 				print('Comment', line)
 
 
 
-
-
-"""
-
-
-def CLS(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def RET(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def SYS(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def JP(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def CALL(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def SE(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def SNE(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def LD(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def ADD(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def OR(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def AND(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def XOR(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def SUB(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def SHR(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def SUBN(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def SHL(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def RND(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def DRW(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def SKP(cmd){
-	return binascii.unhexlify('0000')
-}
-
-def SKNP(cmd){
-	return binascii.unhexlify('0000')
-}
-
-
-
-
-
-"""
