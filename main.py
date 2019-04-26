@@ -1,20 +1,15 @@
 from random import randint
+from src.core import Chip8_Pointer
 import pygame
 import sys
-from src.core import Chip8_Pointer
-import os
+
 
 # to hex -> hex()
 # to bin -> bin()
 # 1 byte = 8 bit
 # 1 char = 4 bit
 
-chip8 = Chip8_Pointer('FONT')
-
-black_color = (0,0,0)
-white_color = (255,255,255)
-upScale = 10
-
+chip8 = Chip8_Pointer(font='font/chip8_Font.bin')
 
 
 # load rom
@@ -28,15 +23,21 @@ else:
 
 
 
+#Init pygame
+
+black_color = (0,0,0)
+white_color = (255,255,255)
+upScale = 10
+gui_space = 400
 
 pygame.init()
 pygame.display.set_caption('Chip 8')
 
-gameDisplay = pygame.display.set_mode((chip8.W*upScale + 400,chip8.H*upScale))
+gameDisplay = pygame.display.set_mode((chip8.W*upScale + gui_space, chip8.H*upScale))
 gameDisplay.fill(black_color)
 
-clock = pygame.time.Clock()
-font = pygame.font.Font('Lekton-Regular.ttf', 15)
+
+font = pygame.font.Font('font/Lekton-Regular.ttf', 15)
 
 controls = [
 	pygame.K_KP0,
@@ -62,6 +63,8 @@ sw = True
 while(sw):
 	opcode = chip8.memory[chip8.PC]<<8 | chip8.memory[chip8.PC+1]
 
+	print(hex(opcode))
+	#input()
 	chip8.run_opcode(opcode)
 
 
@@ -80,6 +83,7 @@ while(sw):
 			if chip8.screen[j][i]:
 				pygame.draw.rect(gameDisplay, white_color, (i*upScale,j*upScale,upScale,upScale))
 
+	# Draw GUI
 	count = 0
 
 	for i in controls:
@@ -117,8 +121,8 @@ while(sw):
 
 	textsurface = font.render("ST = "+('0x%0*X' % (4,chip8.ST) ).upper(), False, white_color)
 	gameDisplay.blit(textsurface,(ref + 130, count*15))
-
 	count = count + 1
+	
 	textsurface = font.render("OPCODE = "+('0x%0*X' % (4,opcode) ).upper(), False, white_color)
 	gameDisplay.blit(textsurface,(ref + 0, count*15))
 
@@ -130,4 +134,3 @@ while(sw):
 
 
 pygame.quit()
-quit()

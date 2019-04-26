@@ -3,3 +3,5 @@ Test/*
 Programs/*
 Out/*
 vPython/*
+__pycache__/*
+*.pyc

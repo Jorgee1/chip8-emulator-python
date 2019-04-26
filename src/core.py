@@ -7,18 +7,19 @@ class Chip8_Core:
 	H = 32
 	START_PC = 512
 
-	def __init__(self, path):
-		self.memory = [0]*8*512
-		self.V      = [0]*8*2        #  8 bit
-		self.I      = 0              # 16 bit
-		self.PC     = self.START_PC  # 16 bit
-		self.SP     = 0              #  8 bit
-		self.STACK  = [0]*8*2        # 16 bit
-		self.DT     = 0              #  8 bit
-		self.ST     = 0              #  8 bit
-		self.key    = [0]*8*2        # 16 bit
+	def __init__(self, **kargs):
+		self.memory = [0 for i in range(8*512)]
+		self.V      = [0 for i in range(8*2)]
+		self.I      = 0
+		self.PC     = self.START_PC
+		self.SP     = 0
+		self.STACK  = [0 for i in range(8*2)]
+		self.DT     = 0
+		self.ST     = 0
+		self.key    = [0 for i in range(8*2)]
 		self.screen = [[0 for x in range(self.W)] for y in range(self.H)]
-		self.load_font(path)
+
+		self.load_font(kargs['font'])
 
 
 	def load_font(self, path):
@@ -58,7 +59,7 @@ class Chip8_Core:
 
 	def RET(self, opcode):
 		# 00EE
-		self.SP = self.SP - 1
+		self.SP = (self.SP - 1) & int('0x000F', 0)
 		self.PC = self.STACK[self.SP]
 		self.STACK[self.SP] = 0
 		self.PC = self.PC + 2
@@ -70,7 +71,7 @@ class Chip8_Core:
 	def CALL_ADDR(self, opcode):
 		# 2nnn
 		self.STACK[self.SP] = self.PC
-		self.SP = self.SP + 1
+		self.SP = (self.SP + 1) & int('0x000F', 0)
 		self.PC = opcode & int('0x0FFF', 0)
 
 	def SE_Vx_Byte(self, opcode):
@@ -497,9 +498,6 @@ class Test_Chip8_Core_Operation(unittest.TestCase):
 
 		self.chip8.ADD_I_Vx(int(instruction, 0))
 		self.assertEqual(self.chip8.I, (base_I + value) & int('0xFFFF', 0), 'Operation Error: ' + instruction)
-
-
-
 
 class Test_Chip8_Core_Comparision(unittest.TestCase):
 
