@@ -56,7 +56,7 @@ class Pointer:
 
 	def run_opcode(self, opcode):
 		self.inst_dic_global[opcode>>12](opcode)
-
+		print('0x{:04x}'.format(opcode))
 		self.tic_timmer()
 
 	def redirect_0(self, opcode):

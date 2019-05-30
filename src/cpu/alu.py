@@ -29,14 +29,12 @@ class ALU:
 	def ADD_Vx_Byte(self, opcode):
 		# 7xkk - tested
 		x, kk = self.get_x_kk(opcode)
-
 		self.V[x], _ = self.__add_values_8bit(self.V[x], kk)
 		self.PC += 2
 
 	def ADD_I_Vx(self, opcode):
 		# Fx1E - test
 		x, _ = self.get_x_y(opcode)
-
 		self.I = self.__add_values_16bit(self.I, self.V[x])
 		self.PC += 2
 

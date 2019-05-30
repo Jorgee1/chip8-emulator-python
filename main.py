@@ -87,6 +87,11 @@ st_draw_y = text_size*3
 dt_draw_x = chip8.W*upScale + text_size
 dt_draw_y = text_size*4
 
+# OPCODE Draw Variables
+
+opcode_draw_x = chip8.W*upScale + text_size
+opcode_draw_y = text_size*5
+
 # Register Draw Variables
 
 register_draw_x = 0
@@ -132,6 +137,9 @@ while(chip8_cylce):
 		if event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE:
 				chip8_cylce = False
+			elif event.key == pygame.K_SPACE:
+				#chip8.run()
+				pass
 			elif event.key == pygame.K_LEFT:
 				memory_draw_move_left = True
 			elif event.key == pygame.K_RIGHT:
@@ -206,6 +214,10 @@ while(chip8_cylce):
 	# DT
 	textsurface = font.render(' '.join(['DT:', '0x{:01x}'.format(chip8.DT).upper()]), False, white_color)
 	gameDisplay.blit(textsurface,(dt_draw_x, dt_draw_y))
+
+	# OPCODE
+	textsurface = font.render(' '.join(['OPCODE:', '0x{:01x}'.format((chip8.memory[chip8.PC] << 8) | chip8.memory[chip8.PC+1]).upper()]), False, white_color)
+	gameDisplay.blit(textsurface,(opcode_draw_x, opcode_draw_y))
 
 	# V register
 	for i in range(len(chip8.V)):
