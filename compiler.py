@@ -1,5 +1,5 @@
 from os import path, makedirs
-from src.compiler import Compiler
+from src.compiler.compiler import Compiler
 
 """
 NOP

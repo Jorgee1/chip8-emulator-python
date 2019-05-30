@@ -1,5 +1,5 @@
 from random import randint
-from src.core import Chip8_Pointer
+from src.cpu.core import Chip8_Pointer
 import pygame
 import sys
 
@@ -37,7 +37,7 @@ gameDisplay = pygame.display.set_mode((chip8.W*upScale + gui_space, chip8.H*upSc
 gameDisplay.fill(black_color)
 
 
-font = pygame.font.Font('font/Lekton-Regular.ttf', 15)
+font = pygame.font.Font('font/UbuntuMono-R.ttf', 15)
 
 controls = [
 	pygame.K_KP0,
