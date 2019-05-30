@@ -105,7 +105,7 @@ key_draw_y = chip8.H*upScale + text_size
 # Memory Draw Variables
 memory_draw_x = 350
 memory_draw_y = chip8.H*upScale + text_size
-memory_draw_padding = text_size
+memory_draw_padding = text_size/4
 
 memory_draw_col = 10
 memory_draw_row = 20

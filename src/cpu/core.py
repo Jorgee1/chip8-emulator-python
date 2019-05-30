@@ -22,39 +22,36 @@ class Chip8_Core(pointer.Pointer, alu.ALU, loader.Loader, skip.Skip, grafics.Gra
 		
 		super(Chip8_Core, self).__init__()
 
-	def load_font(self, path):
-		with open(path, 'rb') as f:
+	# Utils functions
 
-			byte = f.read(1)
-			count = 0
-			while byte:
-				data = int.from_bytes(byte, byteorder='little')
-				if data:
-					self.memory[count] = data
-					byte = f.read(1)
-					count = count + 1
-				else:
-					break
-
-	def load_rom(self, path):
+	def load_file(self, path, offset):
 		with open(path, 'rb') as f:
-			count = 512
+			count = offset
 			byte = f.read(1)
 			while byte:
 				self.memory[count] = int.from_bytes(byte, byteorder='little')
 				byte = f.read(1)
 				count = count + 1
-		print('Last location:', count, 'Size', count - 512)
 
+	def load_font(self, path):
+		self.load_file(path, 0)
 
+	def load_rom(self, path):
+		self.load_file(path, self.START_PC)
+
+	def get_x_y(self, byte):
+		return (byte & 0x0F00) >> 8, (byte & 0x00F0) >> 4
+
+	def get_x_kk(self, byte):
+		return (byte & 0x0F00) >> 8, byte & 0x00FF
+
+	def run(self):
+		opcode = (self.memory[self.PC] << 8) | self.memory[self.PC+1]
+		self.run_opcode(opcode)
+
+	# Instructions
+	
 	def NOP(self, opcode):
 		# 0000
 		self.PC = self.PC + 2
 
-
-	def run(self):
-		opcode = self.memory[self.PC]<<8 | self.memory[self.PC+1]
-
-		#print(hex(opcode))
-		#input()
-		self.run_opcode(opcode)
