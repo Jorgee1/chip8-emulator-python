@@ -10,14 +10,14 @@ class Jump:
 		self.STACK[self.SP] = 0
 		self.PC = self.PC + 2
 
-	def JP_ADDR(self, opcode):
-		# 1nnn - Tested
-		self.PC = self.get_nnn(opcode)
-
 	def CALL_ADDR(self, opcode):
 		# 2nnn
 		self.STACK[self.SP] = self.PC
 		self.SP = (self.SP + 1) & 0x000F
+		self.PC = self.get_nnn(opcode)
+
+	def JP_ADDR(self, opcode):
+		# 1nnn - Tested
 		self.PC = self.get_nnn(opcode)
 
 	def JP_V0_ADDR(self, opcode):
