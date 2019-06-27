@@ -68,6 +68,19 @@ REGISTER = [
     TOKEN_REGISTER_ST
 ]
 
+class Error:
+    def __init__(self, error_type, msg):
+        self.error_type = error_type
+        self.msg = msg
+
+    def __repr__(self):
+        return f'{self.error_type}: {self.msg}'
+
+class InvalidToken(Error):
+    def __init__(self, token):
+        super().__init__('Invalid Token', f'Token "{token}" is not valid')
+
+
 class Token:
     def __init__(self, token_type, value=None):
         self.token_type = token_type
@@ -129,6 +142,7 @@ class Lexer:
 
     def get_tokens(self):
         tokens = []
+        error = None
         while(self.lexer_sw):
             selected_char = self.get_char()
             if self.compare_char('[a-zA-Z]', selected_char):
@@ -138,7 +152,9 @@ class Lexer:
                 elif acc_char in REGISTER:
                     tokens.append(Token(TOKEN_REGISTER, acc_char))
                 else:
-                    tokens.append(Token(TOKEN_LABEL, acc_char))
+                    #tokens.append(Token(TOKEN_LABEL, acc_char))
+                    error = InvalidToken(acc_char)
+                    self.lexer_sw = False
                 #print(acc_char)
             elif selected_char == ',':
                 tokens.append(Token(TOKEN_COMA))
@@ -146,9 +162,15 @@ class Lexer:
                 acc_char = self.get_word('[0-9]')
                 tokens.append(Token(TOKEN_NUMBER, acc_char))
                 #print(acc_char)
+            elif selected_char in ' \n\t':
+                pass
+            else:
+                error = InvalidToken(selected_char)
+                self.lexer_sw = False
+
             self.next()
         tokens.append(Token(TOKEN_END))
-        return tokens
+        return tokens, error
             
 
 class NumberNode:
@@ -243,15 +265,21 @@ class Parser:
 
 def run(file_name):
     tokens = []
-
+    error_flag = False
     with open(file_name) as file:
         for line in file:
-            tokens = tokens + Lexer(line).get_tokens()
+            temp_token, error = Lexer(line).get_tokens()
+            if error:
+                error_flag = True
+                print(error)
+            else:
+                tokens = tokens + temp_token
 
-    print(tokens)
+    if not error_flag:
+        print('Tokens:', tokens)
 
-    parse_tree = Parser(tokens).parse()
+        parse_tree = Parser(tokens).parse()
 
-    print(parse_tree)
+        print('Parsing tree:', parse_tree)
 
 run('test.chip8')
