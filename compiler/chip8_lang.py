@@ -401,6 +401,9 @@ class Parser:
         else:
             return None
 
+    def node(sel):
+        
+
     def factor(self):
         if check_next_token:
             current_token = self.get_token()
@@ -411,7 +414,7 @@ class Parser:
                     if check_next_token:
                         current_token = self.get_token()
                         if current_token.token_type == TOKEN_NUMBER:
-                            
+
                         else:
                             print('Error')
                             return None
