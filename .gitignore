@@ -1,7 +1,7 @@
 rom/*
-Test/*
-Programs/*
-Out/*
+test/*
+programs/*
+out/*
 vPython/*
 __pycache__/*
 *.pyc

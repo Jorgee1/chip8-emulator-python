@@ -3,7 +3,7 @@
 
     SYS - Not used
     CLS
-    RET
+    
     LD
     RND
     DRW
@@ -13,6 +13,7 @@
         CALL
         SE
         SNE
+        RET
 
     Keyboard:
         SKP
@@ -20,10 +21,10 @@
 
     Aritmetic:
         ADD
-        OR
-        AND
-        XOR
         SUB
+        AND
+        OR
+        XOR
         SHR
         SUBN
         SHL
@@ -41,24 +42,80 @@
 """
 import re
 
-TOKEN_NUMBER      = 'NUMBER'
-TOKEN_COMMAND     = 'COMMAND'
-TOKEN_REGISTER    = 'REGISTER'
-TOKEN_END         = 'END'
-TOKEN_COMA        = 'COMA'
-TOKEN_LABEL       = 'LABEL'
-TOKEN_LOAD        = 'LD'
-TOKEN_ADD         = 'ADD'
-TOKEN_SUB         = 'SUB'
-TOKEN_REGISTER_I  = 'I'
-TOKEN_REGISTER_V  = 'V'
-TOKEN_REGISTER_DT = 'DT'
-TOKEN_REGISTER_ST = 'ST'
+TOKEN_NUMBER        = 'NUMBER'
+TOKEN_COMMAND       = 'COMMAND'
+TOKEN_REGISTER      = 'REGISTER'
+TOKEN_END           = 'END'
+TOKEN_COMA          = 'COMA'
+TOKEN_LABEL         = 'LABEL'
+
+# General
+TOKEN_COMMAND_CLS   = 'CLS'
+TOKEN_COMMAND_RND   = 'RND'
+TOKEN_COMMAND_DRAW  = 'DRW'
+TOKEN_COMMAND_LOAD  = 'LD'
+
+# Keyboard
+TOKEN_COMMAND_SKP   = 'SKP'
+TOKEN_COMMAND_SKNP  = 'SKNP'
+
+# PC Movement
+TOKEN_COMMAND_JP    = 'JP'
+TOKEN_COMMAND_CALL  = 'CALL'
+TOKEN_COMMAND_SE    = 'SE'
+TOKEN_COMMAND_SNE   = 'SNE'
+TOKEN_COMMAND_RET   = 'RET'
+
+# Operators
+TOKEN_COMMAND_ADD   = 'ADD'
+TOKEN_COMMAND_SUB   = 'SUB'
+TOKEN_COMMAND_AND   = 'AND'
+TOKEN_COMMAND_OR    = 'OR'
+TOKEN_COMMAND_XOR   = 'XOR'
+TOKEN_COMMAND_SHR   = 'SHR'
+TOKEN_COMMAND_SUBN  = 'SUBN'
+TOKEN_COMMAND_SHL   = 'SHL'
+
+# Registers
+TOKEN_REGISTER_I    = 'I'
+TOKEN_REGISTER_V    = 'V'
+TOKEN_REGISTER_DT   = 'DT'
+TOKEN_REGISTER_ST   = 'ST'
+
+# Special Characters
+TOKEN_SPECIAL_F     = 'F'
+TOKEN_SPECIAL_B     = 'B'
+TOKEN_SPECIAL_K     = 'K'
+
+NO_PARM_COMMANDS = [
+    TOKEN_COMMAND_CLS,
+    TOKEN_COMMAND_RET
+]
+
+SINGLE_PARM_COMMANDS = [
+    TOKEN_COMMAND_JP,
+    TOKEN_COMMAND_CALL
+]
 
 COMMANDS = [
-    TOKEN_LOAD,
-    TOKEN_ADD,
-    TOKEN_SUB
+    TOKEN_COMMAND_CLS   ,
+    TOKEN_COMMAND_RND   ,
+    TOKEN_COMMAND_DRAW  ,
+    TOKEN_COMMAND_LOAD  ,
+    TOKEN_COMMAND_SKP   ,
+    TOKEN_COMMAND_SKNP  ,
+    TOKEN_COMMAND_JP    ,
+    TOKEN_COMMAND_CALL  ,
+    TOKEN_COMMAND_SE    ,
+    TOKEN_COMMAND_SNE   ,
+    TOKEN_COMMAND_ADD   ,
+    TOKEN_COMMAND_SUB   ,
+    TOKEN_COMMAND_AND   ,
+    TOKEN_COMMAND_OR    ,
+    TOKEN_COMMAND_XOR   ,
+    TOKEN_COMMAND_SHR   ,
+    TOKEN_COMMAND_SUBN  ,
+    TOKEN_COMMAND_SHL
 ]
 
 REGISTER = [
@@ -194,14 +251,40 @@ class VNode:
     def __repr__(self):
         return f'V({self.register_index})'
 
-class CommandFactorFactorNode:
-    def __init__(self, command, first_node, second_node):
+
+class CommandFactorFactorFactorNode:
+    def __init__(self, command, first_factor_node, second_factor_node, third_factor_node):
         self.command = command
-        self.first_node = first_node
-        self.second_node = second_node
+        self.first_factor_node = first_factor_node
+        self.second_factor_node = second_factor_node
+        self.third_factor_node = third_factor_node
     
     def __repr__(self):
-        return f'{self.command.value}({self.first_node} - {self.second_node})'
+        return f'{self.command.value}({self.first_factor_node} - {self.second_factor_node} - {self.third_factor_node})'
+
+class CommandFactorFactorNode:
+    def __init__(self, command, first_factor_node, second_factor_node):
+        self.command = command
+        self.first_factor_node = first_factor_node
+        self.second_factor_node = second_factor_node
+    
+    def __repr__(self):
+        return f'{self.command.value}({self.first_factor_node} - {self.second_factor_node})'
+
+class CommandFactorNode:
+    def __init__(self, command, factor_node):
+        self.command = command
+        self.factor_node = factor_node
+    
+    def __repr__(self):
+        return f'{self.command.value}({self.factor_node})'
+
+class CommandNode:
+    def __init__(self, command):
+        self.command = command
+    
+    def __repr__(self):
+        return f'{self.command.value}'
 
 
 class Parser:
