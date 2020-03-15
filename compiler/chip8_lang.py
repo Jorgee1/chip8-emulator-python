@@ -118,7 +118,7 @@ COMMANDS = [
     TOKEN_COMMAND_SHL
 ]
 
-REGISTER = [
+REGISTERS = [
     TOKEN_REGISTER_I,
     TOKEN_REGISTER_V,
     TOKEN_REGISTER_DT,
@@ -138,6 +138,10 @@ class InvalidToken(Error):
         super().__init__('Invalid Token', f'Token "{token}" is not valid')
 
 
+#######################
+# TOKENS
+#######################
+
 class Token:
     def __init__(self, token_type, value=None):
         self.token_type = token_type
@@ -146,96 +150,185 @@ class Token:
     def __repr__(self):
 
         if self.value:
-            return f'{self.token_type}:{self.value}'
+            return f'TOKEN[{self.token_type}:{self.value}]'
         else:
-            return f'{self.token_type}'
+            return f'TOKEN[{self.token_type}]'
 
-class Lexer:
-    def __init__(self, text_line):
-        self.text_line  = text_line
-        self.max_index = len(text_line) - 1
-        self.char_index = 0
-        self.lexer_sw = True
-    
-    def next(self):
-        if (self.char_index < self.max_index):
-            self.char_index += 1
-        else:
-            self.lexer_sw = False
+#######################
+# LEXER
+#######################
 
-    def get_char(self):
-        if (self.char_index <= self.max_index):
-            return self.text_line[self.char_index]
-        else:
-            return None
-
-    def get_next_char(self):
-        next_index = self.char_index + 1
-        if (next_index <= self.max_index):
-            return self.text_line[next_index]
-        else:
-            return None
-
-    def compare_char(self, regex_search, char):
-        if char:
-            if re.search(regex_search, char):
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def get_word(self, regex_search):
-        temp_word = self.get_char()
-        while(True):
-            next_char = self.get_next_char()
-            if self.compare_char(regex_search, next_char):
-                temp_word = temp_word + next_char
-                self.next()
-            else:
-                break
+"""
+    class Lexer:
+        def __init__(self, text_line):
+            self.text_line  = text_line
+            self.max_index = len(text_line) - 1
+            self.char_index = 0
+            self.lexer_sw = True
         
-        return temp_word
-
-    def get_tokens(self):
-        tokens = []
-        error = None
-        while(self.lexer_sw):
-            selected_char = self.get_char()
-            if self.compare_char('[a-zA-Z]', selected_char):
-                acc_char = self.get_word('[a-zA-Z]')
-                if acc_char in COMMANDS:
-                    tokens.append(Token(TOKEN_COMMAND, acc_char))
-                elif acc_char in REGISTER:
-                    tokens.append(Token(TOKEN_REGISTER, acc_char))
-                else:
-                    #tokens.append(Token(TOKEN_LABEL, acc_char))
-                    error = InvalidToken(acc_char)
-                    self.lexer_sw = False
-                #print(acc_char)
-            elif selected_char == ',':
-                tokens.append(Token(TOKEN_COMA))
-            elif self.compare_char('[0-9]', selected_char):
-                acc_char = self.get_word('[0-9]')
-                tokens.append(Token(TOKEN_NUMBER, acc_char))
-                #print(acc_char)
-            elif selected_char in ' \n\t':
-                pass
+        def next(self):
+            if (self.char_index < self.max_index):
+                self.char_index += 1
             else:
-                error = InvalidToken(selected_char)
                 self.lexer_sw = False
 
-            self.next()
-        tokens.append(Token(TOKEN_END))
-        return tokens, error
+        def get_char(self):
+            if (self.char_index <= self.max_index):
+                return self.text_line[self.char_index]
+            else:
+                return None
+
+        def get_next_char(self):
+            next_index = self.char_index + 1
+            if (next_index <= self.max_index):
+                return self.text_line[next_index]
+            else:
+                return None
+
+        def compare_char(self, regex_search, char):
+            if char:
+                if re.search(regex_search, char):
+                    return True
+                else:
+                    return False
+            else:
+                return False
+
+        def get_word(self, regex_search):
+            temp_word = self.get_char()
+            while(True):
+                next_char = self.get_next_char()
+                if self.compare_char(regex_search, next_char):
+                    temp_word = temp_word + next_char
+                    self.next()
+                else:
+                    break
             
+            return temp_word
+
+        def get_tokens(self):
+            tokens = []
+            error = None
+            while(self.lexer_sw):
+                selected_char = self.get_char()
+                if self.compare_char('[a-zA-Z]', selected_char):
+                    acc_char = self.get_word('[a-zA-Z]')
+                    if acc_char in COMMANDS:
+                        tokens.append(Token(TOKEN_COMMAND, acc_char))
+                    elif acc_char in REGISTER:
+                        tokens.append(Token(TOKEN_REGISTER, acc_char))
+                    else:
+                        #tokens.append(Token(TOKEN_LABEL, acc_char))
+                        error = InvalidToken(acc_char)
+                        self.lexer_sw = False
+                    #print(acc_char)
+                elif selected_char == ',':
+                    tokens.append(Token(TOKEN_COMA))
+                elif self.compare_char('[0-9]', selected_char):
+                    acc_char = self.get_word('[0-9]')
+                    tokens.append(Token(TOKEN_NUMBER, acc_char))
+                    #print(acc_char)
+                elif selected_char in ' \n\t':
+                    pass
+                else:
+                    error = InvalidToken(selected_char)
+                    self.lexer_sw = False
+
+                self.next()
+            tokens.append(Token(TOKEN_END))
+            return tokens, error
+"""        
+
+class Lexer:
+    def __init__(self, code):
+        self.reset_lexer(code)
+        self.code_to_tokens()
+
+    def reset_lexer(self, code):
+        self.tokens = []
+        self.code = code
+        self.char_nums = len(self.code)
+        self.lexer_switch = True
+        self.index = 0
+
+    def word_assambly(self, regex_query):
+        temp_num = ''
+        current_char = self.code[self.index]
+        while re.match(regex_query, current_char):
+            temp_num = ''.join([temp_num, current_char])
+            self.index += 1
+
+            if self.index >= self.char_nums:
+                break
+            else:
+                current_char = self.code[self.index]
+
+        return temp_num
+
+    def code_to_tokens(self):
+        while self.lexer_switch:
+            current_char = self.code[self.index]
+            
+
+            if current_char == ' ':
+                self.index += 1
+
+            elif current_char == '\n':
+                self.tokens.append(Token(TOKEN_END))
+                self.index += 1
+
+            elif current_char == ',':
+                self.tokens.append(Token(TOKEN_COMA))
+                self.index += 1
+
+            elif re.match(r'\d', current_char):
+                temp_num = self.word_assambly(r'\d')
+                self.tokens.append(Token(TOKEN_NUMBER, temp_num))
+
+            elif re.match(r'[a-zA-Z]', current_char):
+                temp_word = self.word_assambly(r'[a-zA-Z]')
+                
+                for command in COMMANDS:
+                    if temp_word == command:
+                        self.tokens.append(Token(command))
+                        break
+                else:
+                    for register in REGISTERS:
+                        if temp_word == register:
+                            self.tokens.append(Token(register))
+                            break
+                    else:
+                        # Debe tirar error
+                        self.lexer_switch = False
+                        print('ERROR', temp_word)
+
+            else:
+                # Debe tirar error
+                self.lexer_switch = False
+                print('ERROR', current_char, self.index)
+
+            
+            if self.index >= self.char_nums:
+                self.lexer_switch = False
+
+    def __repr__(self):
+        text = 'LEXER:\n'
+        for i, token in enumerate(self.tokens):
+            text = ''.join([text, str(i), ':', str(token), '\n'])
+
+        return text
+
+
+#######################
+# PARSER NODES
+#######################
 
 class NumberNode:
     def __init__(self, value):
         self.value = value
 
     def __repr__(self):
-        return self.value
+        return f'Node({self.value})'
 
 class RegisterNode:
     def __init__(self, register):
@@ -286,83 +379,204 @@ class CommandNode:
     def __repr__(self):
         return f'{self.command.value}'
 
+class CommandFactorNode:
+    def __init__(self, command, first_node):
+        self.command = command
+        self.first_node = first_node
+    
+    def __repr__(self):
+        return f'{self.command.value}({self.first_node} - {self.second_node})'
+
+class CommandNode:
+    def __init__(self, command, first_node):
+        self.command = command
+        self.first_node = first_node
+    
+    def __repr__(self):
+        return f'{self.command.value}({self.first_node})'
+
+#######################
+# PARSER
+#######################
+
+"""
+    class Parser:
+        def __init__(self, tokens):
+            self.tokens = tokens
+            self.token_index = 0
+            self.parse_sw = True
+
+        def get_token(self):
+            if self.token_index < len(self.tokens):
+                token = self.tokens[self.token_index]
+                self.token_index += 1
+                if self.token_index == len(self.tokens)-1:
+                    self.parse_sw = False
+                return token
+            else:
+                self.parse_sw = False
+                return None
+
+        def parse(self):
+            parse_tree = []
+            while(self.parse_sw):
+
+                parse_tree.append(self.statement())
+
+            return parse_tree
+
+        def factor(self):
+            current_token = self.get_token()
+            if current_token.token_type is TOKEN_NUMBER:
+                return NumberNode(current_token)
+            elif current_token.token_type is TOKEN_REGISTER:
+                if current_token.value is TOKEN_REGISTER_V:
+                    v_index = self.get_token()
+                    if v_index.token_type is TOKEN_NUMBER:
+                        return VNode(v_index)
+                    else:
+                        print('Error1')
+                else:
+                    return RegisterNode(current_token)
+            else:
+                print('Error2')
+
+        def statement(self):
+            current_token = self.get_token()
+            if current_token.token_type is TOKEN_COMMAND:
+                first_factor = self.factor()
+                separator_token = self.get_token()
+                if separator_token.token_type is TOKEN_COMA:
+                    second_factor = self.factor()
+                    end_token = self.get_token()
+                    if end_token.token_type is TOKEN_END:
+                        return CommandFactorFactorNode(current_token, first_factor, second_factor)
+                    else:
+                        print('Error3')
+                else:
+                    print('Error4')
+            else:
+                print('Error5')
+"""
 
 class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
-        self.token_index = 0
-        self.parse_sw = True
+        self.tokens_nums = len(self.tokens)
+        self.index = 0
+        self.parser_switch = True
+        self.tree = []
+
 
     def get_token(self):
-        if self.token_index < len(self.tokens):
-            token = self.tokens[self.token_index]
-            self.token_index += 1
-            if self.token_index == len(self.tokens)-1:
-                self.parse_sw = False
-            return token
+        token = self.tokens[self.index]
+        self.index += 1
+
+        if self.index >= self.tokens_nums:
+            self.parser_switch = False
+
+        return token
+
+
+    def check_next_token(self):
+        if self.index + 1 < self.tokens_nums:
+            return self.index[self.index + 1]
         else:
-            self.parse_sw = False
             return None
 
-    def parse(self):
-        parse_tree = []
-        while(self.parse_sw):
-
-            parse_tree.append(self.statement())
-
-        return parse_tree
+    def node(sel):
+        
 
     def factor(self):
-        current_token = self.get_token()
-        if current_token.token_type is TOKEN_NUMBER:
-            return NumberNode(current_token)
-        elif current_token.token_type is TOKEN_REGISTER:
-            if current_token.value is TOKEN_REGISTER_V:
-                v_index = self.get_token()
-                if v_index.token_type is TOKEN_NUMBER:
-                    return VNode(v_index)
+        if check_next_token:
+            current_token = self.get_token()
+            if current_token.token_type == TOKEN_END:
+                return None
+            elif current_token.token_type in REGISTERS:
+                if current_token.token_type == TOKEN_REGISTER_V:
+                    if check_next_token:
+                        current_token = self.get_token()
+                        if current_token.token_type == TOKEN_NUMBER:
+
+                        else:
+                            print('Error')
+                            return None
+                    else:
+                        print('Error')
+                        return None
                 else:
-                    print('Error1')
-            else:
-                return RegisterNode(current_token)
+                    return RegisterNode(current_token)
         else:
-            print('Error2')
+            return None
 
-    def statement(self):
-        current_token = self.get_token()
-        if current_token.token_type is TOKEN_COMMAND:
-            first_factor = self.factor()
-            separator_token = self.get_token()
-            if separator_token.token_type is TOKEN_COMA:
-                second_factor = self.factor()
-                end_token = self.get_token()
-                if end_token.token_type is TOKEN_END:
-                    return CommandFactorFactorNode(current_token, first_factor, second_factor)
+    def build_tree(self):
+        while self.parser_switch:
+            current_token = self.get_token()
+
+            if self.parser_switch:
+                if current_token.token_type in COMMANDS:
+                    temp_statemet = None
+
+                    temp_command = current_token
+
+                    first_factor  = self.factor()
+                    second_factor = None
+
+                    if first_factor:
+                        second_factor = self.factor()
+
+                    if first_factor and second_factor:
+                        self.tree.append(CommandFactorFactorNode(temp_command, first_factor, second_factor))
+                    elif first_factor:
+                        self.tree.append(CommandFactorNode(temp_command, first_factor))
+                    else:
+                        self.tree.append(CommandNode(temp_command))
+
+
+                    print(current_token)
+                    self.index += 1
                 else:
-                    print('Error3')
-            else:
-                print('Error4')
-        else:
-            print('Error5')
+                    print('Error', current_token)
+                    self.parser_switch = False
+                
 
 
-def run(file_name):
-    tokens = []
-    error_flag = False
-    with open(file_name) as file:
-        for line in file:
-            temp_token, error = Lexer(line).get_tokens()
-            if error:
-                error_flag = True
-                print(error)
-            else:
-                tokens = tokens + temp_token
 
-    if not error_flag:
-        print('Tokens:', tokens)
+"""
+    def run(file_name):
+        tokens = []
+        error_flag = False
+        with open(file_name) as file:
+            for line in file:
+                temp_token, error = Lexer(line).get_tokens()
 
-        parse_tree = Parser(tokens).parse()
+                if error:
+                    error_flag = True
+                    print(error)
+                else:
+                    tokens = tokens + temp_token
 
-        print('Parsing tree:', parse_tree)
 
-run('test.chip8')
+        if not error_flag:
+            print('Tokens:', tokens)
+
+            parse_tree = Parser(tokens).parse()
+
+            print('Parsing tree:', parse_tree)
+
+    run('test.chip8')
+"""
+
+
+text = ''
+with open('test.chip8') as f:
+    for line in f:
+        text = ''.join([text, line])
+
+
+lexer = Lexer(text)
+
+parser = Parser(lexer.tokens)
+
+parser.build_tree()
+
