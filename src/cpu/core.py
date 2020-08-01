@@ -1,6 +1,14 @@
 from src.cpu import pointer, alu, loader, skip, grafics, jump, bit
 
-class Chip8_Core(pointer.Pointer, alu.ALU, loader.Loader, skip.Skip, grafics.Grafics, jump.Jump, bit.Bit):
+class Chip8_Core(
+		pointer.Pointer,
+		alu.ALU,
+		loader.Loader,
+		skip.Skip,
+		grafics.Grafics,
+		jump.Jump,
+		bit.Bit
+	):
 
 	W = 64
 	H = 32
