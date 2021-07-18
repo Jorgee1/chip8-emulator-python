@@ -1,302 +1,340 @@
-import sys
 from random import randint
 
-### VARS  ######################
-W = 64
-H = 32
-START_PC = 512
-FONT = 'font/chip8_Font.bin'
-#################################
+### CORE ########################
+class Core:
+	W = 64
+	H = 32
+	START_PC = 512
 
-### REGISTERS ###################
-memory = [0 for i in range(8*512)]
-v      = [0 for i in range(8*2)]
-i      = 0
-pc     = START_PC
-sp     = 0
-stack  = [0 for i in range(8*2)]
-dt     = 0
-st     = 0
-key    = [0 for i in range(8*2)]
-screen = [[0 for x in range(W)] for y in range(H)]
+	def __init__(self):
+		self.memory = [0 for i in range(8*512)]
+		self.v      = [0 for i in range(8*2)]
+		self.i      = 0
+		self.pc     = self.START_PC
+		self.sp     = 0
+		self.stack  = [0 for i in range(8*2)]
+		self.dt     = 0
+		self.st     = 0
+		self.key    = [0 for i in range(8*2)]
+		self.screen = [[0 for x in range(self.W)] for y in range(self.H)]
+
+	def __repr__(self):
+		opcode = self.to_hex(self.fetch())
+		pc_hex = self.to_hex(self.pc)
+		return f'Core - PC:{pc_hex} OPCODE:{opcode}'
+
+	def to_hex(self, value):
+		return '0x{:04x}'.format(value).upper()
+
+	def load(self, path, offset=0):
+		with open(path, 'rb') as f:
+			count = 0
+			byte = f.read(1)
+			while byte:
+				self.memory[offset + count] = int.from_bytes(byte, byteorder='little')
+				byte = f.read(1)
+				count += 1
+
+	def fetch(self):
+		return (self.memory[self.pc] << 8) | self.memory[self.pc + 1]
+
+	def next(self):
+		self.pc += 2
+
+	def stack_push(self):
+		self.stack[self.sp] = self.pc
+		self.sp = (self.sp + 1) & 0x000F
+
+	def stack_pop(self):
+		self.sp = (self.sp - 1) & 0x000F
+		self.pc = self.stack[self.sp]
+		self.stack[self.sp] = 0
+
+	def clear_screen(self):
+		for j in range(self.H):
+			for i in range(self.W):
+				self.screen[j][i] = 0
+
+	def tic_timmer(self):
+		if self.dt:
+			self.dt -= 1
+
+		if self.st:
+			self.st -= 1
+
 #################################
 
 ### Instructions ################
 
 # Functions
 
-def NOP(opcode):
+def NOP(opcode, core):
 	# 0000
-	pc += 2
+	core.next()
 
-def CLS(opcode):
+def CLS(opcode, core):
 	# 00E0
-	for j in range(H):
-		for i in range(W):
-			screen[j][i] = 0
-	pc += 2
+	core.clear_screen()
+	core.next()
 
-def RET(opcode):
+def RET(opcode, core):
 	# 00EE
-	sp = (sp - 1) & 0x000F
-	pc = stack[sp]
-	stack[sp] = 0
-	pc = pc + 2
+	core.stack_pop()
+	core.next()
 
 
-def JP_ADDR(opcode):
+def JP_ADDR(opcode, core):
 	# 1nnn
-	pc = get_nnn(opcode)
+	core.pc = get_nnn(opcode)
 
-def CALL_ADDR(opcode):
+def CALL_ADDR(opcode, core):
 	# 2nnn
-	stack[sp] = pc
-	sp = (sp + 1) & 0x000F
-	pc = get_nnn(opcode)
+	core.stack_push()
+	core.pc = get_nnn(opcode)
 
-def SE_Vx_Byte(opcode):
+def SE_Vx_Byte(opcode, core):
 	# 3xkk - Tested
 	x, kk = get_x_kk(opcode)
 
-	if v[x] == kk:
-		pc = pc + 2
-	pc = pc + 2
+	if core.v[x] == kk:
+		core.next()
+	core.next()
 
-def SNE_Vx_Byte(opcode):
+def SNE_Vx_Byte(opcode, core):
 	# 4xkk - Tested
 	x, kk = get_x_kk(opcode)
 
-	if v[x] != kk:
-		pc = pc + 2 
-	pc = pc + 2
+	if core.v[x] != kk:
+		core.next()
+	core.next()
 
-def SE_Vx_Vy(opcode):
+def SE_Vx_Vy(opcode, core):
 	# 5xy0 - test
 	x, y = get_x_y(opcode)
 
-	if(v[x]==v[y]):
-		pc = pc + 2
-	pc = pc + 2
+	if(core.v[x] == core.v[y]):
+		core.next()
+	core.next()
 
-def LD_Vx_Byte(opcode):
+def LD_Vx_Byte(opcode, core):
 	# 6xkk
 	x, kk = get_x_kk(opcode)
-	v[x] = kk
-	pc = pc + 2
+	core.v[x] = kk
+	core.next()
 
 
-def ADD_Vx_Byte(opcode):
+def ADD_Vx_Byte(opcode, core):
 	# 7xkk - tested
 	x, kk = get_x_kk(opcode)
-	v[x], _ = add_byte(v[x], kk)
-	pc += 2
+	core.v[x], _ = add_byte(core.v[x], kk)
+	core.next()
 
-def LD_Vx_Vy(opcode):
+def LD_Vx_Vy(opcode, core):
 	# 8xy0
 	x, y = get_x_y(opcode)
-	v[x] = v[y]
-	pc = pc + 2
+	core.v[x] = core.v[y]
+	core.next()
 
-def OR_Vx_Vy(opcode):
+def OR_Vx_Vy(opcode, core):
 	# 8xy1
 	x, y = get_x_y(opcode)
-	v[x] = or_byte(v[x], v[y])
-	pc += 2
+	core.v[x] = or_byte(core.v[x], core.v[y])
+	core.next()
 
-def AND_Vx_Vy(opcode):
+def AND_Vx_Vy(opcode, core):
 	# 8xy2
 	x, y = get_x_y(opcode)
-	v[x] = and_byte(v[x], v[y])
-	pc += 2
+	core.v[x] = and_byte(core.v[x], core.v[y])
+	core.next()
 
-def XOR_Vx_Vy(opcode):
+def XOR_Vx_Vy(opcode, core):
 	# 8xy3
 	x, y = get_x_y(opcode)
-	v[x] = xor_byte(v[x], v[y])
-	pc += 2
+	core.v[x] = xor_byte(core.v[x], core.v[y])
+	core.next()
 
-def ADD_Vx_Vy(opcode):
+def ADD_Vx_Vy(opcode, core):
 	# 8xy4
 	x, y = get_x_y(opcode)
-	v[x], v[0xF] = add_byte(v[x], v[y])
-	pc += 2
+	core.v[x], core.v[0xF] = add_byte(core.v[x], core.v[y])
+	core.next()
 
-def SUB_Vx_Vy(opcode):
+def SUB_Vx_Vy(opcode, core):
 	# 8xy5
 	x, y = get_x_y(opcode)
-	v[x], v[0xF] = sub_byte(v[x], v[y])
-	pc += 2
+	core.v[x], core.v[0xF] = sub_byte(core.v[x], core.v[y])
+	core.next()
 
-def SHR_Vx(opcode):
+def SHR_Vx(opcode, core):
 	# 8xy6
 	x = get_x_kk(opcode)
 
-	v[x], v[0xF] = shift_right(v[x])
-	pc = pc + 2
+	core.v[x], core.v[0xF] = shift_right(core.v[x])
+	core.next()
 
-def SUBN_Vx_Vy(opcode):
+def SUBN_Vx_Vy(opcode, core):
 	# 8xy7
 	x, y = get_x_y(opcode)
 
-	v[x], v[0xF] = sub_byte(v[y], v[x])
-	pc += 2
+	core.v[x], core.v[0xF] = sub_byte(core.v[y], core.v[x])
+	core.next()
 
-def SHL_Vx(opcode):
+def SHL_Vx(opcode, core):
 	# 8xyE
 	x = get_x_kk(opcode)
 
-	v[x], v[0xF] = shift_left(v[x])
-	pc = pc + 2
+	core.v[x], core.v[0xF] = shift_left(core.v[x])
+	core.next()
 
 
-def SNE_Vx_Vy(opcode):
+def SNE_Vx_Vy(opcode, core):
 	# 9xy0
 	x, y = get_x_y(opcode)
 
-	if v[x] != v[y]:
-		pc = pc + 2
-	pc = pc + 2
+	if core.v[x] != core.v[y]:
+		core.next()
+	core.next()
 
-def LD_I_ADDR(opcode):
+def LD_I_ADDR(opcode, core):
 	# Annn
-	i = opcode & 0x0FFF
-	pc = pc + 2
+	core.i = get_nnn(opcode)
+	core.next()
 
-def JP_V0_ADDR(opcode):
+def JP_V0_ADDR(opcode, core):
 	# Bnnn
-	nnn = self.get_nnn(opcode)
-	pc = (nnn + v[0]) & 0xFFF
+	nnn = get_nnn(opcode)
+	core.pc = (nnn + core.v[0]) & 0xFFF
 
-def RND_Vx_Byte(opcode):
+def RND_Vx_Byte(opcode, core):
 	# Cxkk
 	x, kk = get_x_kk(opcode)
 	RND = randint(0, 255)
-	v[x] = RND & kk
-	pc = pc + 2
+	core.v[x] = RND & kk
+	core.next()
 
-def DRW_Vx_Vy_N(opcode):
+def DRW_Vx_Vy_N(opcode, core):
 	# Dxyn
 	x, y, n = get_x_y_n(opcode)
 
-	v[0x0F] = 0
+	core.v[0x0F] = 0
 
-	x_cor = v[x]
-	y_cor = v[y]
+	x_cor = core.v[x]
+	y_cor = core.v[y]
 
 	for index in range(n):
-		sprite = format(memory[i + index], '08b')
-		x_cor = v[x]
+		sprite = format(core.memory[core.i + index], '08b')
+		x_cor = core.v[x]
 
-		if y_cor >= H:
-			y_cor = y_cor - H*int((y_cor/(H-1)))
+		if y_cor >= core.H:
+			y_cor = y_cor - core.H*int((y_cor/(core.H-1)))
 
 		for j in sprite:
 
-			if x_cor >= W:
-				x_cor = x_cor - W*int((x_cor/(W-1)))
+			if x_cor >= core.W:
+				x_cor = x_cor - core.W*int((x_cor/(core.W-1)))
 
-			if screen[y_cor][x_cor] == int(j):
-				if screen[y_cor][x_cor]:
-					v[0x0F] = 1
-				screen[y_cor][x_cor] = 0
+			if core.screen[y_cor][x_cor] == int(j):
+				if core.screen[y_cor][x_cor]:
+					core.v[0x0F] = 1
+				core.screen[y_cor][x_cor] = 0
 			else:
-				screen[y_cor][x_cor] = 1
+				core.screen[y_cor][x_cor] = 1
 			x_cor = x_cor + 1
 		y_cor = y_cor + 1
 
-	pc = pc + 2
+	core.next()
 
 
-def SKP_Vx(opcode):
+def SKP_Vx(opcode, core):
 	#Ex9E
 	x, _ = get_x_kk(opcode)
 
-	if key[V[x]]:
-		pc = pc + 2
-	pc = pc + 2
+	if core.key[core.v[x]]:
+		core.next()
+	core.next()
 
-def SKNP_Vx(opcode):
+def SKNP_Vx(opcode, core):
 	#ExA1
 	x, _ = get_x_kk(opcode)
 	
-	if not key[v[x]]:
-		pc = pc + 2
-	pc = pc + 2
+	if not core.key[core.v[x]]:
+		core.next()
+	core.next()
 
 
-def LD_Vx_DT(opcode):
+def LD_Vx_DT(opcode, core):
 	# Fx07
 	x, _ = get_x_y(opcode)
-	v[x] = dt
-	pc = pc + 2
+	core.v[x] = core.dt
+	core.next()
 
-def LD_Vx_K(opcode):
+def LD_Vx_K(opcode, core):
 	# Fx0a
 	x, _ = get_x_y(opcode)
 
-	for i in range(len(key)):
+	for i in range(len(core.key)):
 		if key[i]:
-			v[x] = i
-			pc = pc + 2
+			core.v[x] = core.i
+			core.next()
 			break
 
-def LD_DT_Vx(opcode):
+def LD_DT_Vx(opcode, core):
 	# Fx15
 	x, _ = get_x_y(opcode)
-	dt = v[x]
-	pc = pc + 2
+	core.dt = core.v[x]
+	core.next()
 
-def LD_ST_Vx(opcode):
+def LD_ST_Vx(opcode, core):
 	# Fx18
 	x, _ = get_x_y(opcode)
-	st = v[x]
-	pc = pc + 2
+	core.st = core.v[x]
+	core.next()
 
-def ADD_I_Vx(opcode):
+def ADD_I_Vx(opcode, core):
 	# Fx1E - test
 	x, _ = get_x_y(opcode)
-	i = add_2byte(i, v[x])
-	pc = pc + 2
+	core.i = add_2byte(core.i, core.v[x])
+	core.next()
 
-def LD_F_Vx(opcode):
+def LD_F_Vx(opcode, core):
 	# Fx29
 	x, _ = get_x_y(opcode)
-	i = v[x] * 5
-	pc = pc + 2
+	core.i = core.v[x] * 5
+	core.next()
 
-def LD_B_Vx(opcode):
+def LD_B_Vx(opcode, core):
 	# Fx33
 	x, _ = get_x_y(opcode)
-	TEN = int(v[x]/100)
-	HUN = int(v[x]/10) - TEN*10
-	DEC = v[x] - HUN*10 - TEN*100
+	TEN = int(core.v[x]/100)
+	HUN = int(core.v[x]/10) - TEN*10
+	DEC = core.v[x] - HUN*10 - TEN*100
 
-	memory[i]     = TEN
-	memory[i + 1] = HUN
-	memory[i + 2] = DEC
+	core.memory[core.i]     = TEN
+	core.memory[core.i + 1] = HUN
+	core.memory[core.i + 2] = DEC
 
-	pc = pc + 2
+	core.next()
 
-def LD_I_Vx(opcode):
+def LD_I_Vx(opcode, core):
 	# Fx55
 	x, _ = get_x_y(opcode)
 	for index in range(x + 1):
-		memory[i + index] = v[index]
+		core.memory[core.i + index] = core.v[index]
 
-	pc = pc + 2
+	core.next()
 
-def LD_Vx_I(opcode):
+def LD_Vx_I(opcode, core):
 	# Fx65
 	x, _ = get_x_y(opcode)
 	for index in range(x + 1):
-		v[i] = memory[i + index]
+		core.v[index] = core.memory[core.i + index]
 
-	pc = pc + 2
+	core.next()
 
 # Index
 
 inst_global = {
-	0 : lambda opcode: inst_0[opcode & 0x00FF](opcode),
+	0 : lambda opcode, core: inst_0[opcode & 0x00FF](opcode, core),
 	1 : JP_ADDR,
 	2 : CALL_ADDR,
 	3 : SE_Vx_Byte,
@@ -304,14 +342,14 @@ inst_global = {
 	5 : SE_Vx_Vy,
 	6 : LD_Vx_Byte,
 	7 : ADD_Vx_Byte,
-	8 : lambda opcode: inst_8[opcode & 0x000F](opcode),
+	8 : lambda opcode, core: inst_8[opcode & 0x000F](opcode, core),
 	9 : SNE_Vx_Vy,
 	10: LD_I_ADDR,
 	11: JP_V0_ADDR,
 	12: RND_Vx_Byte,
 	13: DRW_Vx_Vy_N,
-	14: lambda opcode: inst_E[opcode & 0x00FF](opcode),
-	15: lambda opcode: inst_F[opcode & 0x00FF](opcode)
+	14: lambda opcode, core: inst_E[opcode & 0x00FF](opcode, core),
+	15: lambda opcode, core: inst_F[opcode & 0x00FF](opcode, core)
 }
 
 inst_0 = {
@@ -366,7 +404,7 @@ def get_x_kk(opcode):
 def get_x_y_n(opcode):
 	return (opcode & 0x0F00) >> 8, (opcode & 0x00F0) >> 4, opcode & 0x000F
 
-def load_file(self, path, offset):
+def load_file(path, offset):
 	with open(path, 'rb') as f:
 		count = offset
 		byte = f.read(1)
@@ -374,27 +412,6 @@ def load_file(self, path, offset):
 			memory[count] = int.from_bytes(byte, byteorder='little')
 			byte = f.read(1)
 			count = count + 1
-
-#################################
-
-### Main Functions ##############
-
-def fetch():
-	return (memory[pc] << 8) | memory[pc + 1]
-
-def tic_timmer():
-	if dt:
-		dt = dt - 1
-
-	if st:
-		st = st - 1
-
-def run(opcode):
-	opcode = fetch()
-
-	inst_global[opcode>>12](opcode)
-
-	tic_timmer()
 
 #################################
 
@@ -449,17 +466,3 @@ def shift_right(value):
 	return (value << 1) & 255, MSB
 
 #################################
-
-
-
-if __name__ == '__main__':
-	if len(sys.argv) >= 2:
-		game = sys.argv[1]
-
-		load_file(FONT, 0)
-		load_file(path, START_PC)
-
-		# Implementation
-	else:
-		print("No file selected")
-		exit()
