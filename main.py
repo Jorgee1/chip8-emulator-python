@@ -1,6 +1,5 @@
 import sys
 
-from enum import Enum
 from dataclasses import field
 from dataclasses import astuple
 from dataclasses import dataclass

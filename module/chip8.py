@@ -336,7 +336,6 @@ class Chip8:
         y_cor = self.V[y]
         for i in range(n):
             sprite = format(self.memory[self.I+i], '08b')
-            print(sprite)
             x_cor = self.V[x]
 
             if (y_cor>=self.h):
