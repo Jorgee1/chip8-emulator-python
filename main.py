@@ -112,11 +112,10 @@ game_exit = False
 
 pg.init()
 screen = Screen(w=800, h=600)
-font = Font('font/UbuntuMono-R.ttf', 18)
 controller = Input()
 
 # Chip8 init
-chip8 = Chip8(font='font/chip8_Font.bin')
+chip8 = Chip8()
 chip8.load_rom(rom)
 
 while not game_exit:

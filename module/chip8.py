@@ -33,7 +33,26 @@ def sub_values(value_1, value_2):
     else:
         return value_1 + ((~ value_2) & 0x00FF) + 1, sub_check_carry(value_1, value_2)
 
+# Font
 
+font = [
+	0xF0, 0x90, 0x90, 0x90, 0xF0, # 0
+    0x20, 0x60, 0x20, 0x20, 0x70, # 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, # 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, # 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, # 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, # 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, # 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, # 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, # 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, # 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, # A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, # B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, # C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, # D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, # E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  # F
+]
 
 # Chip8 Class
 class Chip8:
@@ -42,7 +61,7 @@ class Chip8:
     h = 32
     START_PC = 512
 
-    def __init__(self, *args, **kargs):
+    def __init__(self):
         self.memory = [0 for i in range(8*512)]
         self.V      = [0 for i in range(8*2)]
         self.I      = 0
@@ -54,7 +73,9 @@ class Chip8:
         self.key    = [0 for i in range(8*2)]
         self.screen = [[0 for x in range(self.w)] for y in range(self.h)]
 
-        self.load_font(kargs['font'])
+        # Load Font
+        for index, byte in enumerate(font):
+            self.memory[index] = byte
         
         # Instructions addresing
         self.inst_dic_global = {
@@ -119,9 +140,6 @@ class Chip8:
                 self.memory[count] = int.from_bytes(byte, byteorder='little')
                 byte = f.read(1)
                 count = count + 1
-
-    def load_font(self, path):
-        self._load_file(path, 0)
 
     def load_rom(self, path):
         self._load_file(path, self.START_PC)
@@ -327,7 +345,6 @@ class Chip8:
         self.PC += 2
 
     def DRW_Vx_Vy_N(self, opcode):
-        # Dxyn TODO: turn xyn into a function
         x, y, n = get_x_y_n(opcode)
 
         self.V[0x0F] = 0
@@ -354,7 +371,6 @@ class Chip8:
                     self.screen[y_cor][x_cor] = 1
                 x_cor = x_cor + 1
             y_cor = y_cor + 1
-
 
         self.PC = self.PC + 2
 
