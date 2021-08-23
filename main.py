@@ -120,6 +120,8 @@ chip8.load_rom(rom)
 
 while not game_exit:
 
+    print(hex(chip8.PC), hex(chip8.DT), chip8.V)
+
     for event in pg.event.get():
         if event.type == pg.QUIT:
             game_exit = True
@@ -141,11 +143,14 @@ while not game_exit:
         astuple(Colors.black),
         pg.Rect(0, 0, chip8.w*10, chip8.h*10)
     )
+
     for j in range(chip8.h):
         for i in range(chip8.w):
             if chip8.screen[j][i]:
                 rect = pg.Rect(i*10, j*10, 10, 10)
                 pg.draw.rect(surface, astuple(Colors.white), rect)
+
+
 
     pg.display.flip()
 

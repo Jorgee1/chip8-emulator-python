@@ -144,17 +144,16 @@ class Chip8:
     def load_rom(self, path):
         self._load_file(path, self.START_PC)
 
-    def tic_timmer(self):
-        if self.DT:
-            self.DT = self.DT - 1
+    def run(self):
+        if not self.DT:
+            opcode = (self.memory[self.PC] << 8) | self.memory[self.PC+1]
+            self.inst_dic_global[opcode>>12](opcode)
 
         if self.ST:
             self.ST = self.ST - 1
-
-    def run(self):
-        opcode = (self.memory[self.PC] << 8) | self.memory[self.PC+1]
-        self.inst_dic_global[opcode>>12](opcode)
-        self.tic_timmer()
+        
+        if self.DT:
+            self.DT = self.DT - 1
 
 
     def redirect_0(self, opcode):
