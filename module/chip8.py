@@ -19,7 +19,7 @@ def add_check_carry(value_1, value_2):
     return int((value_1 + value_2) > 0xFF)
 
 def sub_check_carry(value_1, value_2):
-    return int(value_1 > value_2)
+    return int(value_1 >= value_2)
 
 def add_values_8bit(value_1, value_2):
     return (value_1 + value_2) & 0x00FF, add_check_carry(value_1, value_2)
@@ -377,7 +377,7 @@ class Chip8:
 
     def SHR_Vx(self, opcode):
         # 8xy6
-        x = get_x_kk(opcode)
+        x, _ = get_x_kk(opcode)
 
         self.V[0xF] = self.V[x] & 0x01
         self.V[x]   = self.V[x] >> 1
@@ -386,10 +386,10 @@ class Chip8:
 
     def SHL_Vx(self, opcode):
         # 8xyE
-        x = get_x_kk(opcode)
-
+        x, _ = get_x_kk(opcode)
+        
         self.V[0xF] = (self.V[x] & 0x80) >> 7
-        self.V[x]   = self.V[x] << 1
+        self.V[x]   = (self.V[x] << 1) & 0xFF
         self.PC     = self.PC + 2
 
     # ALU
